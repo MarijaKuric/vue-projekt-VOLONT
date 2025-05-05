@@ -8,10 +8,10 @@ const props = defineProps({
   toggleDarkMode: Function,
   goToGost: Function,
   goToRegistracija: Function,
-  goToPrijava: Function, // Dodano!
+  goToPrijava: Function,
+  goToOrganizatorPrijava: Function
 });
 </script>
-
 
 <template>
   <div
@@ -60,33 +60,31 @@ const props = defineProps({
       REGISTRIRAJ SE
     </button>
 
+    <!-- Prijava -->
+    <p class="z-10 mt-4 text-lg text-center animate-slide-up delay-100">
+      Imate račun?
+      <span
+        @click="props.goToPrijava"
+        class="ml-1 text-yellow-400 font-bold cursor-pointer transition-transform duration-300 transform hover:scale-110 hover:text-yellow-300"
+      >
+        Prijavite se
+      </span>
+    </p>
 
-<!-- Prijava -->
-<p class="z-10 mt-4 text-lg text-center animate-slide-up delay-100">
-  Imate račun?
-  <span
-    @click="props.goToPrijava"
-    class="ml-1 text-yellow-400 font-bold cursor-pointer transition-transform duration-300 transform hover:scale-110 hover:text-yellow-300"
-  >
-    Prijavite se
-  </span>
-</p>
-
-<!-- Organizator -->
-<p class="z-10 mt-2 text-lg text-center animate-slide-up delay-150">
-  Prijavite se u sustav kao
-  <span
-    @click="props.goToGost"
-    class="ml-1 text-indigo-400 cursor-pointer transition-transform duration-300 transform hover:scale-110 hover:text-indigo-300"
-  >
-    ORGANIZATOR
-  </span>
-</p>
-
+    <!-- Organizator -->
+    <p class="z-10 mt-2 text-lg text-center animate-slide-up delay-150">
+      Prijavite se u sustav kao
+      <span
+        @click="props.goToOrganizatorPrijava"
+        class="ml-1 text-indigo-400 cursor-pointer transition-transform duration-300 transform hover:scale-110 hover:text-indigo-300"
+      >
+        ORGANIZATOR
+      </span>
+    </p>
   </div>
 </template>
 
-<style>
+<style scoped>
 .bg-dark {
   background-color: #0d1321;
 }
@@ -114,6 +112,5 @@ const props = defineProps({
   animation: slide-up 0.6s ease-out both;
 }
 .animate-slide-up.delay-75 { animation-delay: 0.15s; }
-.animate-slide-up.delay-100 { animation-delay: 0.3s; }
-.animate-slide-up.delay-150 { animation-delay: 0.45s; }
+.animate-slide-up.delay-100 { animation-delay: 0.}
 </style>

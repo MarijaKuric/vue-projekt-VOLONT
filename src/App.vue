@@ -4,38 +4,33 @@ import Početna from '../views/Početna.vue'
 import Gost from '../views/Gost.vue'
 import Registracija from '../views/Registracija.vue'
 import Prijava from '../views/Prijava.vue'
+import OrganizatorPrijava from '../views/OrganizatorPrijava.vue'
 
 const darkMode = ref(true)
-const showGost = ref(false)
-const showRegistracija = ref(false)
-const showPrijava = ref(false)
+const currentView = ref('početna') // 'početna', 'gost', 'registracija', 'prijava', 'organizator'
 
 function toggleDarkMode() {
   darkMode.value = !darkMode.value
 }
 
 function goToGost() {
-  showGost.value = true
-  showRegistracija.value = false
-  showPrijava.value = false
+  currentView.value = 'gost'
 }
 
 function goToHomePage() {
-  showGost.value = false
-  showRegistracija.value = false
-  showPrijava.value = false
+  currentView.value = 'početna'
 }
 
 function goToRegistracija() {
-  showGost.value = false
-  showRegistracija.value = true
-  showPrijava.value = false
+  currentView.value = 'registracija'
 }
 
 function goToPrijava() {
-  showGost.value = false
-  showRegistracija.value = false
-  showPrijava.value = true
+  currentView.value = 'prijava'
+}
+
+function goToOrganizatorPrijava() {
+  currentView.value = 'organizator'
 }
 </script>
 
@@ -45,23 +40,24 @@ function goToPrijava() {
     class="min-h-screen transition-colors"
   >
     <Početna
-      v-if="!showGost && !showRegistracija && !showPrijava"
+      v-if="currentView === 'početna'"
       :darkMode="darkMode"
       :toggleDarkMode="toggleDarkMode"
       :goToGost="goToGost"
       :goToRegistracija="goToRegistracija"
       :goToPrijava="goToPrijava"
+      :goToOrganizatorPrijava="goToOrganizatorPrijava"
     />
     
     <Gost
-      v-else-if="showGost"
+      v-else-if="currentView === 'gost'"
       :darkMode="darkMode"
       :toggleDarkMode="toggleDarkMode"
       :goToHomePage="goToHomePage"
     />
     
     <Registracija
-      v-else-if="showRegistracija"
+      v-else-if="currentView === 'registracija'"
       :darkMode="darkMode"
       :toggleDarkMode="toggleDarkMode"
       :goToHomePage="goToHomePage"
@@ -69,7 +65,15 @@ function goToPrijava() {
     />
     
     <Prijava
-      v-else
+      v-else-if="currentView === 'prijava'"
+      :darkMode="darkMode"
+      :toggleDarkMode="toggleDarkMode"
+      :goToHomePage="goToHomePage"
+      :goToRegistracija="goToRegistracija"
+    />
+
+    <OrganizatorPrijava
+      v-else-if="currentView === 'organizator'"
       :darkMode="darkMode"
       :toggleDarkMode="toggleDarkMode"
       :goToHomePage="goToHomePage"
