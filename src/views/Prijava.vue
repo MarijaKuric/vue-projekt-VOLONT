@@ -1,5 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 const email = ref('')
 const lozinka = ref('')
@@ -10,9 +13,7 @@ const isValid = computed(() => {
 
 defineProps({
   darkMode: Boolean,
-  toggleDarkMode: Function,
-  goToHomePage: Function,
-  goToRegistracija: Function
+  toggleDarkMode: Function
 })
 </script>
 
@@ -21,7 +22,6 @@ defineProps({
     :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
     class="min-h-screen flex flex-col items-center justify-center px-6 py-12 font-sans transition-colors duration-500 relative"
   >
-    <!-- Dark mode gumb -->
     <div class="absolute top-4 right-4">
       <button
         @click="toggleDarkMode"
@@ -31,11 +31,9 @@ defineProps({
       </button>
     </div>
 
-    <!-- Naslov -->
     <h1 class="text-5xl font-extrabold text-pink-500 mb-2 tracking-wide italic">VolontIT</h1>
     <p class="mb-8 text-center text-lg">Prijavite se u svoj račun.</p>
 
-    <!-- Forma -->
     <div class="w-full max-w-md space-y-5 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg">
       <div>
         <label
@@ -71,7 +69,6 @@ defineProps({
         />
       </div>
 
-      <!-- Gumb -->
       <button
         :class="isValid ? 'bg-pink-500 hover:bg-pink-600' : 'bg-gray-400 cursor-not-allowed'"
         class="w-full text-white py-3 rounded-full font-semibold shadow transition"
@@ -81,17 +78,16 @@ defineProps({
       </button>
     </div>
 
-    <!-- Linkovi -->
     <p class="mt-6 text-center text-sm">
       Nemate račun?
-      <span class="font-bold text-yellow-400 hover:underline cursor-pointer" @click="goToRegistracija">
+      <span class="font-bold text-yellow-400 hover:underline cursor-pointer" @click="router.push('/registracija')">
         Registrirajte se
       </span>
     </p>
     <p
       class="mt-2 cursor-pointer text-sm font-medium transition"
       :class="[darkMode ? 'text-white hover:text-blue-400' : 'text-black hover:text-blue-600']"
-      @click="goToHomePage"
+      @click="router.push('/')"
     >
       ⬅️ Početna
     </p>

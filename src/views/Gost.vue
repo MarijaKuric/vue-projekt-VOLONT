@@ -1,37 +1,34 @@
-<!-- src/views/Gost.vue -->
 <script setup>
-import { defineProps } from 'vue'
+import { useRouter } from 'vue-router'
 import TamniNacin from '@/components/TamniNacin.vue'
 
-const props = defineProps({
+const router = useRouter()
+
+defineProps({
   darkMode: Boolean,
-  toggleDarkMode: Function,
-  goToHomePage: Function
+  toggleDarkMode: Function
 })
 </script>
 
 <template>
   <div
-    :class="props.darkMode ? 'bg-dark text-white' : 'bg-white text-dark'"
+    :class="darkMode ? 'bg-dark text-white' : 'bg-white text-dark'"
     class="flex flex-col min-h-screen p-6 overflow-hidden transition-colors"
   >
-    <!-- Tamni/Svijetli način -->
     <div class="absolute top-4 right-4">
       <TamniNacin
-        :darkMode="props.darkMode"
-        @toggle="props.toggleDarkMode"
+        :darkMode="darkMode"
+        @toggle="toggleDarkMode"
       />
     </div>
 
-    <!-- Naslov -->
     <h1 class="text-3xl md:text-4xl font-bold text-pink-600 text-center mt-12 mb-8">
       VolontIT (Gost)
     </h1>
 
-    <!-- Glavni okvir -->
     <div
       class="max-w-2xl mx-auto rounded-2xl p-6 shadow-lg"
-      :class="props.darkMode
+      :class="darkMode
         ? 'bg-gray-800 text-white'
         : 'bg-white text-gray-800'"
     >
@@ -46,12 +43,11 @@ const props = defineProps({
       </p>
     </div>
 
-    <!-- Centrirani POČETNA "text button" pri dnu -->
     <div class="mt-auto flex justify-center mb-6">
       <button
-        @click="props.goToHomePage()"
+        @click="router.push('/')"
         class="text-lg font-semibold transition transform hover:scale-105 cursor-pointer"
-        :class="props.darkMode
+        :class="darkMode
           ? 'text-white hover:text-blue-500'
           : 'text-gray-700 hover:text-blue-500'"
       >

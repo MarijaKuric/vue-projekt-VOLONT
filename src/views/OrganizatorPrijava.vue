@@ -1,24 +1,22 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-// Reaktivna polja za naziv organizacije, email i lozinku
+const router = useRouter()
+
 const nazivOrganizacije = ref('')
 const email = ref('')
 const lozinka = ref('')
 
-// Validacija forme
 const isValid = computed(() => {
   return nazivOrganizacije.value.trim() !== '' && 
          email.value.trim() !== '' && 
          lozinka.value.trim() !== ''
 })
 
-// Destrukturirano preuzimanje proslijeđenih propsa
-const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps({
+defineProps({
   darkMode: Boolean,
-  toggleDarkMode: Function,
-  goToHomePage: Function,
-  goToRegistracija: Function
+  toggleDarkMode: Function
 })
 </script>
 
@@ -27,7 +25,6 @@ const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps
     :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
     class="min-h-screen flex flex-col items-center justify-center px-6 py-12 font-sans transition-colors duration-500 relative"
   >
-    <!-- Dark mode gumb -->
     <div class="absolute top-4 right-4">
       <button
         @click="toggleDarkMode"
@@ -37,13 +34,10 @@ const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps
       </button>
     </div>
 
-    <!-- Naslov -->
     <h1 class="text-5xl font-extrabold text-pink-600 mb-2 tracking-wide italic">VolontIT</h1>
     <p class="mb-8 text-center text-lg">Prijava organizatora</p>
 
-    <!-- Forma -->
     <div class="w-full max-w-md space-y-5 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg">
-      <!-- Naziv organizacije -->
       <div>
         <label
           for="nazivOrganizacije"
@@ -61,7 +55,6 @@ const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps
         />
       </div>
 
-      <!-- Email -->
       <div>
         <label
           for="email"
@@ -79,7 +72,6 @@ const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps
         />
       </div>
 
-      <!-- Lozinka -->
       <div>
         <label
           for="lozinka"
@@ -97,7 +89,6 @@ const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps
         />
       </div>
 
-      <!-- Gumb -->
       <button
         :class="isValid ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-400 cursor-not-allowed'"
         class="w-full text-white py-3 rounded-full font-semibold shadow transition"
@@ -110,7 +101,7 @@ const { darkMode, toggleDarkMode, goToHomePage, goToRegistracija } = defineProps
     <p
       class="mt-2 cursor-pointer text-sm font-medium transition"
       :class="[darkMode ? 'text-white hover:text-blue-400' : 'text-black hover:text-blue-600']"
-      @click="goToHomePage"
+      @click="router.push('/')"
     >
       ⬅️ Početna
     </p>
