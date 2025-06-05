@@ -1,18 +1,50 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { signInWithEmailAndPassword } from 'firebase/auth'
+import { auth, db } from '@/firebase'
+import { doc, getDoc } from 'firebase/firestore'
 
 const router = useRouter()
 
 const nazivOrganizacije = ref('')
 const email = ref('')
 const lozinka = ref('')
+const prijavaError = ref('')
 
 const isValid = computed(() => {
-  return nazivOrganizacije.value.trim() !== '' && 
-         email.value.trim() !== '' && 
+  return nazivOrganizacije.value.trim() !== '' &&
+         email.value.trim() !== '' &&
          lozinka.value.trim() !== ''
 })
+
+const handleLogin = async () => {
+  prijavaError.value = ''
+  
+  if (!isValid.value) {
+    prijavaError.value = 'Molimo popunite sva obavezna polja.'
+    return
+  }
+
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email.value, lozinka.value)
+    const user = userCredential.user
+    
+    // Check user role in Firestore
+    const userDoc = await getDoc(doc(db, 'users', user.uid))
+    const userRole = userDoc.data()?.role
+    
+    if (userRole !== 'organizator') {
+      throw new Error('Niste autorizirani kao organizator')
+    }
+    
+    // Successful login, redirect to organizer dashboard
+    router.push('/organizator/pregled')
+  } catch (error) {
+    console.error('Organizer login error:', error)
+    prijavaError.value = 'Neispravan email, lozinka ili naziv organizacije.'
+  }
+}
 
 defineProps({
   darkMode: Boolean,
@@ -28,30 +60,30 @@ defineProps({
     <div class="absolute top-4 right-4">
       <button
         @click="toggleDarkMode"
-        class="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:bg-pink-600 transition"
+        class="bg-pink-600 text-white px-4 py-2 rounded-full shadow-md hover:bg-pink-700 transition text-xs font-bold"
       >
         {{ darkMode ? 'SVIJETLI NAČIN' : 'TAMNI NAČIN' }}
       </button>
     </div>
 
-    <h1 class="text-5xl font-extrabold text-pink-600 mb-2 tracking-wide italic">VolontIT</h1>
-    <p class="mb-8 text-center text-lg">Prijava organizatora</p>
+    <h1 class="text-5xl font-extrabold text-pink-500 mb-2 tracking-wide italic">VolontIT</h1>
+    <p class="mb-8 text-center text-lg" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Prijava organizatora</p>
 
-    <div class="w-full max-w-md space-y-5 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-lg">
+    <div class="w-full max-w-md space-y-5 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-xl">
       <div>
         <label
           for="nazivOrganizacije"
           :class="darkMode ? 'text-black' : 'text-gray-700'"
           class="block mb-1 text-sm font-medium"
         >
-          Naziv organizacije<span class="text-blue-600">*</span>
+          Naziv organizacije<span class="text-blue-500">*</span>
         </label>
         <input
           v-model="nazivOrganizacije"
           id="nazivOrganizacije"
           type="text"
-          placeholder="Naziv organizacije..."
-          :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500', darkMode ? 'text-black' : 'text-black']"
+          placeholder="Unesite naziv vaše organizacije"
+          :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500']"
         />
       </div>
 
@@ -61,14 +93,14 @@ defineProps({
           :class="darkMode ? 'text-black' : 'text-gray-700'"
           class="block mb-1 text-sm font-medium"
         >
-          Email<span class="text-blue-600">*</span>
+          Email<span class="text-blue-500">*</span>
         </label>
         <input
           v-model="email"
           id="email"
           type="email"
-          placeholder="Email..."
-          :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500', darkMode ? 'text-black' : 'text-black']"
+          placeholder="npr. email@example.com"
+          :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500']"
         />
       </div>
 
@@ -78,44 +110,54 @@ defineProps({
           :class="darkMode ? 'text-black' : 'text-gray-700'"
           class="block mb-1 text-sm font-medium"
         >
-          Lozinka<span class="text-blue-600">*</span>
+          Lozinka<span class="text-blue-500">*</span>
         </label>
         <input
           v-model="lozinka"
           id="lozinka"
           type="password"
-          placeholder="Lozinka..."
-          :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500', darkMode ? 'text-black' : 'text-black']"
+          placeholder="Unesite vašu lozinku"
+          :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500']"
         />
       </div>
 
+       <div v-if="prijavaError" class="text-red-500 text-sm text-center">
+        {{ prijavaError }}
+      </div>
+
       <button
+        @click="handleLogin"
         :class="isValid ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-400 cursor-not-allowed'"
-        class="w-full text-white py-3 rounded-full font-semibold shadow transition"
+        class="w-full text-white py-3 rounded-full font-semibold shadow-md transition"
         :disabled="!isValid"
       >
         PRIJAVI SE
       </button>
     </div>
-
+    <br>
+    <br>
     <p
       class="mt-2 cursor-pointer text-sm font-medium transition"
-      :class="[darkMode ? 'text-white hover:text-blue-400' : 'text-black hover:text-blue-600']"
+      :class="[darkMode ? 'text-gray-300 hover:text-pink-400' : 'text-gray-700 hover:text-pink-600']"
       @click="router.push('/')"
     >
-      ⬅️ Početna
+      ⬅️ POČETNA STRANICA
     </p>
   </div>
 </template>
 
 <style>
 .bg-dark {
-  background-color: #0d1321;
+  background-color: #0d1321; /* Tamna pozadina */
 }
 .bg-light {
-  background-color: #f9fafb;
+  background-color: #f9fafb; /* Svijetla pozadina */
 }
 .text-dark {
-  color: #0d1321;
+  color: #0d1321; /* Tamni tekst za svijetlu pozadinu */
+}
+/* Stil za placeholder tekst u input poljima */
+input.text-black::placeholder {
+  color: #6b7280; /* Gray-500 */
 }
 </style>

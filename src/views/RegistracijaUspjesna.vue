@@ -47,7 +47,7 @@ defineProps({
           @click="router.push('/')"
           class="text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 font-medium transition"
         >
-          POČETNA
+          ⬅️ POČETNA
         </button>
       </div>
     </div>
