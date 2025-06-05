@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '@/firebase'
-import { doc, getDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 const router = useRouter()
 
@@ -27,22 +27,67 @@ const handleLogin = async () => {
   }
 
   try {
+    // Prvo pokušaj autentifikaciju
     const userCredential = await signInWithEmailAndPassword(auth, email.value, lozinka.value)
     const user = userCredential.user
     
-    // Check user role in Firestore
-    const userDoc = await getDoc(doc(db, 'users', user.uid))
-    const userRole = userDoc.data()?.role
+    // Proveri da li je email organizatora
+    if (email.value !== 'marijaa.kuric@gmail.com') {
+      prijavaError.value = 'Samo ovlašteni organizator može pristupiti ovom dijelu.'
+      return
+    }
+
+    // Proverava da li je naziv organizacije tačan
+    if (nazivOrganizacije.value.trim() !== 'Organizacijska udruga') {
+      prijavaError.value = 'Neispravan naziv organizacije.'
+      return
+    }
     
-    if (userRole !== 'organizator') {
-      throw new Error('Niste autorizirani kao organizator')
+    // Check if user document exists in Firestore
+    const userDocRef = doc(db, 'users', user.uid)
+    const userDoc = await getDoc(userDocRef)
+    
+    if (!userDoc.exists()) {
+      // Ako dokument ne postoji, kreiraj ga sa ulogom organizatora
+      await setDoc(userDocRef, {
+        email: user.email,
+        role: 'organizator',
+        nazivOrganizacije: nazivOrganizacije.value.trim(),
+        createdAt: new Date().toISOString()
+      })
+      console.log('Kreiran novi dokument za organizatora')
+    } else {
+      // Ako dokument postoji, proveri ulogu
+      const userData = userDoc.data()
+      if (userData.role !== 'organizator') {
+        // Ažuriraj ulogu na organizator
+        await setDoc(userDocRef, {
+          ...userData,
+          role: 'organizator',
+          nazivOrganizacije: nazivOrganizacije.value.trim(),
+          updatedAt: new Date().toISOString()
+        }, { merge: true })
+        console.log('Ažurirana uloga korisnika na organizator')
+      }
     }
     
     // Successful login, redirect to organizer dashboard
     router.push('/organizator/pregled')
+    
   } catch (error) {
     console.error('Organizer login error:', error)
-    prijavaError.value = 'Neispravan email, lozinka ili naziv organizacije.'
+    
+    if (error.code === 'auth/user-not-found') {
+      prijavaError.value = 'Korisnik sa ovim email-om ne postoji.'
+    } else if (error.code === 'auth/wrong-password') {
+      prijavaError.value = 'Neispravna lozinka.'
+    } else if (error.code === 'auth/invalid-email') {
+      prijavaError.value = 'Neispravna email adresa.'
+    } else if (error.code === 'auth/too-many-requests') {
+      prijavaError.value = 'Previše neuspešnih pokušaja. Pokušajte ponovo kasnije.'
+    } else {
+      prijavaError.value = 'Došlo je do greške prilikom prijave. Pokušajte ponovo.'
+    }
   }
 }
 
@@ -82,7 +127,7 @@ defineProps({
           v-model="nazivOrganizacije"
           id="nazivOrganizacije"
           type="text"
-          placeholder="Unesite naziv vaše organizacije"
+          placeholder="Organizacijska udruga"
           :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500']"
         />
       </div>
@@ -99,7 +144,7 @@ defineProps({
           v-model="email"
           id="email"
           type="email"
-          placeholder="npr. email@example.com"
+          placeholder="marijaa.kuric@gmail.com"
           :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500']"
         />
       </div>
