@@ -81,7 +81,6 @@
         <p :class="darkMode ? 'text-gray-400' : 'text-gray-500'">Trenutno nema unesenih zadataka za ovaj događaj.</p>
       </div>
 
-
       <button
         @click="prikaziFormu = !prikaziFormu"
         class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-full shadow"
@@ -148,9 +147,9 @@
         @click="urediIndex !== null ? azurirajZadatak() : dodajZadatak()"
         :class="isFormValid ? 'bg-pink-600 hover:bg-pink-700' : 'bg-gray-400 cursor-not-allowed'"
         class="w-full text-white py-3 rounded-full font-semibold shadow transition"
-        :disabled="!isFormValid"
+        :disabled="!isFormValid || isLoading"
       >
-        {{ urediIndex !== null ? 'SPREMI PROMJENE' : 'DODAJ ZADATAK' }}
+        {{ isLoading ? 'UČITAVANJE...' : (urediIndex !== null ? 'SPREMI PROMJENE' : 'DODAJ ZADATAK') }}
       </button>
 
       <button
@@ -162,10 +161,14 @@
       </button>
     </div>
 
+    <div v-if="error" class="w-full max-w-md bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+      {{ error }}
+    </div>
+
     <div class="mt-auto mb-6">
       <button
         class="text-sm font-medium hover:underline"
-        @click="router.push('/')"
+        @click="odjava"
         :class="darkMode ? 'text-white hover:text-blue-400' : 'text-black hover:text-blue-600'"
       >
         ⬅️ ODJAVA
@@ -175,10 +178,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { db } from '@/firebase'
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore'
+import { auth, db } from '@/firebase'
+import { doc, getDoc, updateDoc } from 'firebase/firestore'
+import { signOut } from 'firebase/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -187,6 +191,9 @@ const dogadajId = ref(null)
 const dogadaj = ref(null)
 const prikaziFormu = ref(false)
 const urediIndex = ref(null)
+const isLoading = ref(false)
+const error = ref('')
+
 const noviZadatak = ref({
   brojVolontera: null,
   opis: ''
@@ -220,80 +227,119 @@ async function ucitajDogadaj() {
   }
   
   try {
+    error.value = ''
     const docSnap = await getDoc(doc(db, 'dogadaji', dogadajId.value))
     if (docSnap.exists()) {
       dogadaj.value = { id: docSnap.id, ...docSnap.data() }
+      // Ensure zadaci array exists
+      if (!dogadaj.value.zadaci) {
+        dogadaj.value.zadaci = []
+      }
     } else {
-      console.warn(`Događaj s ID ${dogadajId.value} nije pronađen.`)
-      router.push('/organizator/pregled')
+      error.value = `Događaj s ID ${dogadajId.value} nije pronađen.`
+      setTimeout(() => {
+        router.push('/organizator/pregled')
+      }, 2000)
     }
-  } catch (error) {
-    console.error('Error loading event:', error)
+  } catch (err) {
+    console.error('Error loading event:', err)
+    error.value = 'Greška pri učitavanju događaja'
   }
 }
 
 async function dodajZadatak() {
-  if (!isFormValid.value || !dogadaj.value) return
+  if (!isFormValid.value || !dogadaj.value || isLoading.value) return
+  
+  isLoading.value = true
+  error.value = ''
   
   try {
+    const noviZadatakData = {
+      brojVolontera: noviZadatak.value.brojVolontera,
+      opis: noviZadatak.value.opis.trim(),
+      zauzeto: false,
+      ime: '',
+      createdAt: new Date().toISOString()
+    }
+    
+    const azuriraniZadaci = [...(dogadaj.value.zadaci || []), noviZadatakData]
+    
     await updateDoc(doc(db, 'dogadaji', dogadaj.value.id), {
-      zadaci: arrayUnion({
-        brojVolontera: noviZadatak.value.brojVolontera,
-        opis: noviZadatak.value.opis,
-        zauzeto: false,
-        ime: ''
-      })
+      zadaci: azuriraniZadaci,
+      updatedAt: new Date().toISOString()
     })
     
     noviZadatak.value = { brojVolontera: null, opis: '' }
     await ucitajDogadaj()
     prikaziFormu.value = false
-  } catch (error) {
-    console.error('Error adding task:', error)
+  } catch (err) {
+    console.error('Error adding task:', err)
+    error.value = 'Greška pri dodavanju zadatka'
+  } finally {
+    isLoading.value = false
   }
 }
 
 async function obrisiZadatak(zadatakIndex) {
   if (!dogadaj.value || !confirm('Jeste li sigurni da želite obrisati ovaj zadatak?')) return
   
+  isLoading.value = true
+  error.value = ''
+  
   try {
-    const zadatakZaBrisanje = dogadaj.value.zadaci[zadatakIndex]
+    const azuriraniZadaci = dogadaj.value.zadaci.filter((_, index) => index !== zadatakIndex)
+    
     await updateDoc(doc(db, 'dogadaji', dogadaj.value.id), {
-      zadaci: arrayRemove(zadatakZaBrisanje)
+      zadaci: azuriraniZadaci,
+      updatedAt: new Date().toISOString()
     })
     
     await ucitajDogadaj()
-  } catch (error) {
-    console.error('Error deleting task:', error)
+  } catch (err) {
+    console.error('Error deleting task:', err)
+    error.value = 'Greška pri brisanju zadatka'
+  } finally {
+    isLoading.value = false
   }
 }
 
 async function azurirajZadatak() {
-  if (!isFormValid.value || urediIndex.value === null || !dogadaj.value) return
+  if (!isFormValid.value || urediIndex.value === null || !dogadaj.value || isLoading.value) return
+  
+  isLoading.value = true
+  error.value = ''
   
   try {
-    const stariZadatak = dogadaj.value.zadaci[urediIndex.value]
-    const noviZadatakCopy = { ...noviZadatak.value }
+    const azuriraniZadaci = [...dogadaj.value.zadaci]
+    azuriraniZadaci[urediIndex.value] = {
+      ...azuriraniZadaci[urediIndex.value],
+      brojVolontera: noviZadatak.value.brojVolontera,
+      opis: noviZadatak.value.opis.trim(),
+      updatedAt: new Date().toISOString()
+    }
     
     await updateDoc(doc(db, 'dogadaji', dogadaj.value.id), {
-      zadaci: arrayRemove(stariZadatak)
-    })
-    
-    await updateDoc(doc(db, 'dogadaji', dogadaj.value.id), {
-      zadaci: arrayUnion(noviZadatakCopy)
+      zadaci: azuriraniZadaci,
+      updatedAt: new Date().toISOString()
     })
     
     ponistiUredivanje()
     await ucitajDogadaj()
-  } catch (error) {
-    console.error('Error updating task:', error)
+  } catch (err) {
+    console.error('Error updating task:', err)
+    error.value = 'Greška pri ažuriranju zadatka'
+  } finally {
+    isLoading.value = false
   }
 }
 
 function urediZadatak(zadatakIndex) {
-  if (dogadaj.value && dogadaj.value.zadaci[zadatakIndex]) {
+  if (dogadaj.value && dogadaj.value.zadaci && dogadaj.value.zadaci[zadatakIndex]) {
     urediIndex.value = zadatakIndex
-    noviZadatak.value = { ...dogadaj.value.zadaci[zadatakIndex] }
+    noviZadatak.value = {
+      brojVolontera: dogadaj.value.zadaci[zadatakIndex].brojVolontera,
+      opis: dogadaj.value.zadaci[zadatakIndex].opis
+    }
     prikaziFormu.value = true
   }
 }
@@ -302,6 +348,25 @@ function ponistiUredivanje() {
   urediIndex.value = null
   noviZadatak.value = { brojVolontera: null, opis: '' }
   prikaziFormu.value = false
+}
+
+function navigateToUnosZadatka() {
+  router.push('/organizator/unos-zadatka')
+}
+
+function formatDatum(datumString) {
+  if (!datumString) return ''
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+  return new Date(datumString).toLocaleDateString('hr-HR', options)
+}
+
+async function odjava() {
+  try {
+    await signOut(auth)
+    router.push('/')
+  } catch (error) {
+    console.error('Greška pri odjavi:', error)
+  }
 }
 
 defineProps({

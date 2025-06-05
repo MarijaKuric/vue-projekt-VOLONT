@@ -46,11 +46,21 @@
       </div>
     </div>
 
+    <!-- Loading state -->
+    <div v-if="loading" class="text-center py-10">
+      <p :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Učitavanje događaja...</p>
+    </div>
+
+    <!-- No events -->
+    <div v-else-if="dogadaji.length === 0" class="text-center py-10">
+      <p :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Trenutno nema dostupnih događaja.</p>
+    </div>
+
     <!-- Events grid - max 3 per row -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl px-4">
+    <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-6xl px-4">
       <div
-        v-for="(dogadaj, index) in dogadaji"
-        :key="index"
+        v-for="dogadaj in dogadaji"
+        :key="dogadaj.id"
         :class="darkMode ? 'bg-gray-800' : 'bg-white'"
         class="rounded-xl shadow-lg p-6 transition-transform hover:scale-105"
       >
@@ -58,17 +68,17 @@
           <span :class="darkMode ? 'text-white' : 'text-black'">Naziv:</span> {{ dogadaj.naziv }}
         </p>
         <p class="mb-1"><span :class="darkMode ? 'text-white' : 'text-black'">Lokacija:</span> {{ dogadaj.lokacija }}</p>
-        <p class="mb-4"><span :class="darkMode ? 'text-white' : 'text-black'">Datum:</span> {{ dogadaj.datum }}</p>
+        <p class="mb-4"><span :class="darkMode ? 'text-white' : 'text-black'">Datum:</span> {{ formatDatum(dogadaj.datum) }}</p>
 
         <button
-          @click="dogadaj.prikaziZadatke = !dogadaj.prikaziZadatke"
+          @click="togglePrikazZadataka(dogadaj.id)"
           class="w-full bg-indigo-600 hover:bg-indigo-800 text-white font-semibold py-2 rounded-full shadow"
         >
-          {{ dogadaj.prikaziZadatke ? 'SAKRIJ ZADATKE' : 'PRIKAŽI ZADATKE' }}
+          {{ dogadajiMap[dogadaj.id]?.prikaziZadatke ? 'SAKRIJ ZADATKE' : 'PRIKAŽI ZADATKE' }}
         </button>
 
         <!-- Tasks -->
-        <div v-if="dogadaj.prikaziZadatke" class="mt-4 space-y-3">
+        <div v-if="dogadajiMap[dogadaj.id]?.prikaziZadatke && dogadaj.zadaci" class="mt-4 space-y-3">
           <div
             v-for="(zadatak, i) in dogadaj.zadaci"
             :key="i"
@@ -78,7 +88,7 @@
             <p class="font-bold text-indigo-500 mb-1">
               {{ i + 1 }}. ZADATAK
             </p>
-            <p class="text-sm"><span class="font-semibold">Broj volontera:</span> {{ zadatak.broj }}</p>
+            <p class="text-sm"><span class="font-semibold">Broj volontera:</span> {{ zadatak.brojVolontera }}</p>
             <p class="text-sm mb-2"><span class="font-semibold">Opis:</span> {{ zadatak.opis }}</p>
             <button
               @click="prijaviSe(dogadaj.id, i)"
@@ -88,7 +98,7 @@
                 zadatak.zauzeto ? 'bg-red-500 cursor-not-allowed' : 'bg-green-400 hover:bg-green-700'
               ]"
             >
-              {{ zadatak.zauzeto ? 'ZAUZETO: ' + zadatak.ime : 'PRIJAVI SE' }}
+              {{ zadatak.zauzeto ? 'ZAUZETO: ' + (zadatak.ime || '') : 'PRIJAVI SE' }}
             </button>
           </div>
         </div>
@@ -109,92 +119,89 @@
 </template>
 
 <script setup>
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { reactive } from 'vue'
+import { db } from '@/firebase'
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore'
 
 const router = useRouter()
+const loading = ref(true)
+const dogadaji = ref([])
+const dogadajiMap = ref({})
+
+// Fetch all events from Firebase
+async function ucitajDogadaje() {
+  try {
+    loading.value = true
+    const querySnapshot = await getDocs(collection(db, 'dogadaji'))
+    
+    dogadaji.value = []
+    dogadajiMap.value = {}
+    
+    querySnapshot.forEach((doc) => {
+      const dogadajData = {
+        id: doc.id,
+        ...doc.data()
+      }
+      dogadaji.value.push(dogadajData)
+      dogadajiMap.value[doc.id] = {
+        prikaziZadatke: false
+      }
+    })
+  } catch (error) {
+    console.error('Greška pri učitavanju događaja:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+function togglePrikazZadataka(dogadajId) {
+  if (dogadajiMap.value[dogadajId]) {
+    dogadajiMap.value[dogadajId].prikaziZadatke = !dogadajiMap.value[dogadajId].prikaziZadatke
+  }
+}
+
+async function prijaviSe(dogadajId, zadatakIndex) {
+  try {
+    const dogadaj = dogadaji.value.find(d => d.id === dogadajId)
+    if (!dogadaj || !dogadaj.zadaci || !dogadaj.zadaci[zadatakIndex]) return
+    
+    // In a real app, you would get the current user's name here
+    const imeVolontera = 'Ime Prezime' // Replace with actual user name
+    
+    const azuriraniZadaci = [...dogadaj.zadaci]
+    azuriraniZadaci[zadatakIndex] = {
+      ...azuriraniZadaci[zadatakIndex],
+      zauzeto: true,
+      ime: imeVolontera
+    }
+    
+    await updateDoc(doc(db, 'dogadaji', dogadajId), {
+      zadaci: azuriraniZadaci,
+      updatedAt: new Date().toISOString()
+    })
+    
+    // Refresh the data
+    await ucitajDogadaje()
+  } catch (error) {
+    console.error('Greška pri prijavi na zadatak:', error)
+  }
+}
+
+function formatDatum(datumString) {
+  if (!datumString) return ''
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+  return new Date(datumString).toLocaleDateString('hr-HR', options)
+}
+
+onMounted(() => {
+  ucitajDogadaje()
+})
 
 defineProps({
   darkMode: Boolean,
   toggleDarkMode: Function
 })
-
-// Simulated data with more events for demonstration
-const dogadaji = reactive([
-  {
-    id: 1,
-    naziv: 'IT-Konferencija',
-    lokacija: 'Pula',
-    datum: '05.05.2026.',
-    prikaziZadatke: false,
-    zadaci: [
-      {
-        broj: 1,
-        opis: 'Davanje uputa posjetiteljima',
-        zauzeto: false,
-        ime: ''
-      },
-      {
-        broj: 2,
-        opis: 'Postavljanje opreme',
-        zauzeto: false,
-        ime: ''
-      }
-    ]
-  },
-  {
-    id: 2,
-    naziv: 'Web Hackathon',
-    lokacija: 'Zagreb',
-    datum: '12.06.2026.',
-    prikaziZadatke: false,
-    zadaci: [
-      {
-        broj: 1,
-        opis: 'Registracija timova',
-        zauzeto: false,
-        ime: ''
-      }
-    ]
-  },
-  {
-    id: 3,
-    naziv: 'Edukacija za Seniore',
-    lokacija: 'Rijeka',
-    datum: '20.07.2026.',
-    prikaziZadatke: false,
-    zadaci: [
-      {
-        broj: 3,
-        opis: 'Pomoć pri korištenju pametnih telefona',
-        zauzeto: false,
-        ime: ''
-      }
-    ]
-  },
-  {
-    id: 4,
-    naziv: 'Radionica programiranja',
-    lokacija: 'Split',
-    datum: '15.08.2026.',
-    prikaziZadatke: false,
-    zadaci: [
-      {
-        broj: 2,
-        opis: 'Pomoć učesnicima radionice',
-        zauzeto: false,
-        ime: ''
-      }
-    ]
-  }
-])
-
-function prijaviSe(dogadajId, zadatakIndex) {
-  const dogadaj = dogadaji.find((d) => d.id === dogadajId)
-  const zadatak = dogadaj.zadaci[zadatakIndex]
-  zadatak.zauzeto = true
-  zadatak.ime = 'Ime Prezime' // Will be replaced with real name from auth later
-}
 </script>
 
 <style scoped>

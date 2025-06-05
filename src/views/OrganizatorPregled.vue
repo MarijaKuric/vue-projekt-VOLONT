@@ -41,7 +41,12 @@
       <h2 class="text-2xl font-semibold mb-6 text-center" :class="darkMode ? 'text-white' : 'text-gray-800'">
         Pregled Kreiranih Događaja
       </h2>
-      <div v-if="dogadaji.length === 0" class="text-center py-10">
+      
+      <div v-if="loading" class="text-center py-10">
+        <p :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Učitavanje događaja...</p>
+      </div>
+      
+      <div v-else-if="dogadaji.length === 0" class="text-center py-10">
         <p :class="darkMode ? 'text-gray-400' : 'text-gray-600'">Nema kreiranih događaja.</p>
         <button
           @click="router.push('/organizator/unos-dogadaja')"
@@ -85,7 +90,7 @@
     <div class="mt-12 mb-6 text-center">
       <button
         class="text-sm font-medium hover:underline"
-        @click="router.push('/')"
+        @click="odjava"
         :class="darkMode ? 'text-white hover:text-blue-400' : 'text-black hover:text-blue-600'"
       >
         ⬅️ ODJAVA
@@ -95,41 +100,82 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { auth, db } from '@/firebase'
+import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore'
+import { signOut } from 'firebase/auth'
 
-const router = useRouter();
-const dogadaji = ref([]);
+const router = useRouter()
+const dogadaji = ref([])
+const loading = ref(true)
 
 defineProps({
   darkMode: Boolean,
   toggleDarkMode: Function
-});
+})
 
-function ucitajDogadaje() {
-  dogadaji.value = JSON.parse(localStorage.getItem('dogadaji') || '[]');
+async function ucitajDogadaje() {
+  try {
+    loading.value = true
+    const user = auth.currentUser
+    if (!user) {
+      router.push('/organizator/prijava')
+      return
+    }
+
+    const q = query(
+      collection(db, 'dogadaji'), 
+      where('organizatorId', '==', user.uid)
+    )
+    const querySnapshot = await getDocs(q)
+    
+    dogadaji.value = []
+    querySnapshot.forEach((doc) => {
+      dogadaji.value.push({
+        id: doc.id,
+        ...doc.data()
+      })
+    })
+  } catch (error) {
+    console.error('Greška pri učitavanju događaja:', error)
+  } finally {
+    loading.value = false
+  }
 }
 
 onMounted(() => {
-  ucitajDogadaje();
-});
+  ucitajDogadaje()
+})
 
 function formatDatum(datumString) {
-  if (!datumString) return '';
-  const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-  return new Date(datumString).toLocaleDateString('hr-HR', options);
+  if (!datumString) return ''
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+  return new Date(datumString).toLocaleDateString('hr-HR', options)
 }
 
 function urediZadatke(dogadajId) {
-  router.push(`/organizator/unos-zadatka/${dogadajId}`);
+  router.push(`/organizator/unos-zadatka/${dogadajId}`)
 }
 
-function obrisiDogadaj(dogadajId) {
+async function obrisiDogadaj(dogadajId) {
   if (confirm('Jeste li sigurni da želite obrisati ovaj događaj i sve njegove zadatke?')) {
-    let sviDogadaji = JSON.parse(localStorage.getItem('dogadaji') || '[]');
-    sviDogadaji = sviDogadaji.filter(d => d.id !== dogadajId);
-    localStorage.setItem('dogadaji', JSON.stringify(sviDogadaji));
-    ucitajDogadaje(); // Ponovno učitaj da se prikaže promjena
+    try {
+      await deleteDoc(doc(db, 'dogadaji', dogadajId))
+      await ucitajDogadaje()
+    } catch (error) {
+      console.error('Greška pri brisanju događaja:', error)
+      alert('Došlo je do greške pri brisanju događaja')
+    }
+  }
+}
+
+async function odjava() {
+  try {
+    await signOut(auth)
+    router.push('/')
+  } catch (error) {
+    console.error('Greška pri odjavi:', error)
   }
 }
 </script>
