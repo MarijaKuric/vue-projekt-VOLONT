@@ -66,18 +66,21 @@
             <p class="text-sm"><span class="font-semibold">Broj volontera:</span> {{ zadatak.broj }}</p>
             <p class="text-sm mb-2"><span class="font-semibold">Opis:</span> {{ zadatak.opis }}</p>
             <button
-              @click="prijaviSe(dogadaj.id, i)"
-              :disabled="zadatak.zauzeto"
-              :class="[
-                'w-full py-1 rounded-full text-white font-semibold text-sm',
-                zadatak.zauzeto ? 'bg-red-500 cursor-not-allowed' : 'bg-green-400 hover:bg-green-700'
-              ]"
+              @click="toggleZadatak(dogadaj.id, i)"
+              :disabled="zadatak.zauzeto && !isMyTask(zadatak)"
+              :class="getButtonClass(zadatak)"
+              class="w-full py-1 rounded-full text-white font-semibold text-sm"
             >
-              {{ zadatak.zauzeto ? 'ZAUZETO: ' + zadatak.ime : 'PRIJAVI SE' }}
+              {{ getButtonText(zadatak) }}
             </button>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div v-if="loading" class="mt-4">
+      <p :class="darkMode ? 'text-white' : 'text-black'">Učitava...</p>
     </div>
 
     <!-- Logout -->
@@ -100,10 +103,18 @@ import { auth, db, collection, doc, updateDoc, onSnapshot } from '@/firebase'
 
 const router = useRouter()
 const dogadaji = ref([])
+const loading = ref(false)
+const darkMode = ref(false)
 let unsubscribe = null
 
 onMounted(async () => {
   try {
+    // Load dark mode preference
+    const savedDarkMode = localStorage.getItem('darkMode')
+    if (savedDarkMode) {
+      darkMode.value = JSON.parse(savedDarkMode)
+    }
+
     unsubscribe = onSnapshot(collection(db, 'dogadaji'), (snapshot) => {
       dogadaji.value = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -113,6 +124,7 @@ onMounted(async () => {
     })
   } catch (error) {
     console.error('Greška pri dohvaćanju događaja:', error)
+    alert('Greška pri učitavanju događaja')
   }
 })
 
@@ -120,30 +132,98 @@ onUnmounted(() => {
   if (unsubscribe) unsubscribe()
 })
 
-async function prijaviSe(dogadajId, zadatakIndex) {
+function toggleDarkMode() {
+  darkMode.value = !darkMode.value
+  localStorage.setItem('darkMode', JSON.stringify(darkMode.value))
+}
+
+function isMyTask(zadatak) {
+  const user = auth.currentUser
+  return user && zadatak.volonterId === user.uid
+}
+
+function getButtonClass(zadatak) {
+  if (!zadatak.zauzeto) {
+    return 'bg-green-400 hover:bg-green-700'
+  } else if (isMyTask(zadatak)) {
+    return 'bg-orange-500 hover:bg-orange-700'
+  } else {
+    return 'bg-red-500 cursor-not-allowed'
+  }
+}
+
+function getButtonText(zadatak) {
+  if (!zadatak.zauzeto) {
+    return 'PRIJAVI SE'
+  } else if (isMyTask(zadatak)) {
+    return 'ODUSTANI'
+  } else {
+    return 'ZAUZETO: ' + (zadatak.ime || 'Nepoznato')
+  }
+}
+
+async function toggleZadatak(dogadajId, zadatakIndex) {
+  const user = auth.currentUser
+  if (!user) {
+    await router.push('/prijava')
+    return
+  }
+
+  if (loading.value) return
+  loading.value = true
+
   try {
-    const user = auth.currentUser
-    if (!user) {
-      await router.push('/prijava')
+    const dogadaj = dogadaji.value.find(d => d.id === dogadajId)
+    if (!dogadaj || !dogadaj.zadaci || !dogadaj.zadaci[zadatakIndex]) {
+      throw new Error('Zadatak nije pronađen')
+    }
+
+    const zadatak = dogadaj.zadaci[zadatakIndex]
+    
+    // Kreiraj kopiju cijelog zadaci niza
+    const updatedZadaci = [...dogadaj.zadaci]
+
+    if (!zadatak.zauzeto) {
+      // Prijavi se na zadatak
+      updatedZadaci[zadatakIndex] = {
+        ...zadatak,
+        zauzeto: true,
+        volonterId: user.uid,
+        ime: user.displayName || user.email || 'Volonter',
+        prijavljenoAt: new Date().toISOString()
+      }
+    } else if (isMyTask(zadatak)) {
+      // Odustani od zadatka
+      updatedZadaci[zadatakIndex] = {
+        ...zadatak,
+        zauzeto: false,
+        volonterId: null,
+        ime: null,
+        prijavljenoAt: null,
+        odustaoAt: new Date().toISOString()
+      }
+    } else {
+      // Ne smije ažurirati tuđe zadatke
       return
     }
 
-    const dogadaj = dogadaji.value.find(d => d.id === dogadajId)
-    const zadatak = dogadaj.zadaci[zadatakIndex]
-
-    if (zadatak.zauzeto) return
-
+    // Debug ispis
+    console.log('Ažuriram dogadaj:', dogadajId)
+    console.log('Korisnik:', user.uid)
+    console.log('Originalni zadaci:', dogadaj.zadaci)
+    console.log('Novi zadaci:', updatedZadaci)
+    console.log('OrganizatorId:', dogadaj.organizatorId)
+    
+    // Ažuriraj cijeli zadaci niz
     await updateDoc(doc(db, 'dogadaji', dogadajId), {
-      [`zadaci.${zadatakIndex}.zauzeto`]: true,
-      [`zadaci.${zadatakIndex}.volonterId`]: user.uid,
-      [`zadaci.${zadatakIndex}.ime`]: user.displayName || 'Volonter',
-      [`zadaci.${zadatakIndex}.prijavljenoAt`]: new Date().toISOString()
+      zadaci: updatedZadaci
     })
 
-    // Ne trebamo ručno ažurirati lokalno stanje jer će onSnapshot osvježiti
   } catch (error) {
-    console.error('Greška prilikom prijave na zadatak:', error)
-    alert('Došlo je do greške pri prijavi na zadatak')
+    console.error('Greška pri upravljanju zadatkom:', error)
+    alert(`Greška: ${error.message || 'Nepoznata greška'}`)
+  } finally {
+    loading.value = false
   }
 }
 </script>
