@@ -99,7 +99,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { auth, db, collection, doc, updateDoc, onSnapshot } from '@/firebase'
+import { auth, db, collection, doc, updateDoc, onSnapshot, getDoc } from '@/firebase'
 
 const router = useRouter()
 const dogadaji = ref([])
@@ -173,15 +173,23 @@ async function toggleZadatak(dogadajId, zadatakIndex) {
   loading.value = true
 
   try {
-    const dogadaj = dogadaji.value.find(d => d.id === dogadajId)
-    if (!dogadaj || !dogadaj.zadaci || !dogadaj.zadaci[zadatakIndex]) {
+    // Dohvati najnovije podatke o događaju
+    const dogadajRef = doc(db, 'dogadaji', dogadajId)
+    const dogadajSnapshot = await getDoc(dogadajRef)
+    
+    if (!dogadajSnapshot.exists()) {
+      throw new Error('Događaj nije pronađen')
+    }
+    
+    const dogadajData = dogadajSnapshot.data()
+    if (!dogadajData.zadaci || !dogadajData.zadaci[zadatakIndex]) {
       throw new Error('Zadatak nije pronađen')
     }
 
-    const zadatak = dogadaj.zadaci[zadatakIndex]
+    const zadatak = dogadajData.zadaci[zadatakIndex]
     
     // Kreiraj kopiju cijelog zadaci niza
-    const updatedZadaci = [...dogadaj.zadaci]
+    const updatedZadaci = [...dogadajData.zadaci]
 
     if (!zadatak.zauzeto) {
       // Prijavi se na zadatak
@@ -190,7 +198,8 @@ async function toggleZadatak(dogadajId, zadatakIndex) {
         zauzeto: true,
         volonterId: user.uid,
         ime: user.displayName || user.email || 'Volonter',
-        prijavljenoAt: new Date().toISOString()
+        prijavljenoAt: new Date().toISOString(),
+        completed: false // Dodano za praćenje stanja
       }
     } else if (isMyTask(zadatak)) {
       // Odustani od zadatka
@@ -200,7 +209,8 @@ async function toggleZadatak(dogadajId, zadatakIndex) {
         volonterId: null,
         ime: null,
         prijavljenoAt: null,
-        odustaoAt: new Date().toISOString()
+        odustaoAt: new Date().toISOString(),
+        completed: false
       }
     } else {
       // Ne smije ažurirati tuđe zadatke
@@ -210,12 +220,11 @@ async function toggleZadatak(dogadajId, zadatakIndex) {
     // Debug ispis
     console.log('Ažuriram dogadaj:', dogadajId)
     console.log('Korisnik:', user.uid)
-    console.log('Originalni zadaci:', dogadaj.zadaci)
+    console.log('Originalni zadaci:', dogadajData.zadaci)
     console.log('Novi zadaci:', updatedZadaci)
-    console.log('OrganizatorId:', dogadaj.organizatorId)
     
     // Ažuriraj cijeli zadaci niz
-    await updateDoc(doc(db, 'dogadaji', dogadajId), {
+    await updateDoc(dogadajRef, {
       zadaci: updatedZadaci
     })
 
