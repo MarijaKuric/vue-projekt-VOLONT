@@ -32,7 +32,7 @@ Glavni cilj aplikacije je olakšati proces prijave za volontere i organizatorima
   - Email: nikola.tankovic@unipu.hr
   - Web: [FIPU profil](https://fipu.unipu.hr/fipu/nikola.tankovic)
 
-# Vue.js Projekt - VOLONT
+# Vue.js Projekt - VOLONTIT
 
 ## Razvojno okruženje
 
