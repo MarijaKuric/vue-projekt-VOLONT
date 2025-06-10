@@ -1,40 +1,44 @@
-# "VolontIT"
-```sh
-### Aplikacija za prijavu događaja, volonterskih aktivnosti i volontera.
-```sh
+# VolontIT
+
+### Aplikacija za prijavu događaja, volonterskih aktivnosti i volontera
+
 ## Autori i zadaci
-*Marija Kurić(mkuric@unipu.hr)-Use case, implementacija firebase dijela, UI komponente
-*Barbara Medica(bmedica@unipu.hr)- Use Case Sequence diagram, AI dio, UI komponente
-```sh
 
+- **Marija Kurić** (mkuric@unipu.hr) - Use case, prototip, implementacija firebase dijela, UI komponente
+- **Barbara Medica** (bmedica@unipu.hr) - Use Case Sequence diagram, AI dio, UI komponente
 
+## PROTOTIP
 
-# vue-projekt-VOLONT
+[Figma prototip](https://www.figma.com/proto/uXpwytLnRxamYUIV5X944z/Untitled?node-id=130-514&t=txogzbYhvgTTy82x-1&starting-point-node-id=5%3A2)
 
-This template should help get you started developing with Vue 3 in Vite.
+## Opis aplikacije
 
-## Recommended IDE Setup
+Aplikacija omogućava:
+- Jednostavno prijavljivanje i upravljanje zadacima
+- Pregled svih dostupnih volonterskih zadataka
+- Prijavu na volonterske zadatke
+- Administrativno sučelje za dodavanje i uređivanje zadataka
+- Praćenje obaveza kroz interaktivne liste i grafikon napretka
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+Glavni cilj aplikacije je olakšati proces prijave za volontere i organizatorima brz pronalazak volontera.
 
-## Customize configuration
+## Organizacija
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- **Institucija**: Sveučilište Jurja Dobrile u Puli
+- **Fakultet**: Fakultet informatike u Puli
+- **Kolegij**: Programsko inženjerstvo
+- **Akademska godina**: 2024./2025.
+- **Mentor**: [Nikola Tanković](https://www.tankovic.me/)
+  - Email: nikola.tankovic@unipu.hr
+  - Web: [FIPU profil](https://fipu.unipu.hr/fipu/nikola.tankovic)
 
-## Project Setup
+# Vue.js Projekt - VOLONT
+
+## Razvojno okruženje
+
+Preporučeni IDE: [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (isključiti Vetur)
+
+## Postavljanje projekta
 
 ```sh
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
