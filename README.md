@@ -1,7 +1,11 @@
 # "VolontIT"
 ```sh
-
-
+### Aplikacija za prijavu događaja, volonterskih aktivnosti i volontera.
+```sh
+## Autori i zadaci
+*Marija Kurić(mkuric@unipu.hr)-Use case, implementacija firebase dijela, UI komponente
+*Barbara Medica(bmedica@unipu.hr)- Use Case Sequence diagram, AI dio, UI komponente
+```sh
 
 
 
