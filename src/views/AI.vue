@@ -19,28 +19,16 @@
 
       <!-- Navigation -->
       <div class="flex flex-wrap gap-4 justify-center mb-8">
-        <button 
-          @click="router.push('/ai')"
-          class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow"
-        >
+        <button @click="router.push('/ai')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
           AI ALAT
         </button>
-        <button 
-          @click="router.push('/volonter-dogadaji')"
-          class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow"
-        >
+        <button @click="router.push('/volonter-dogadaji')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
           DOGAĐAJI
         </button>
-        <button 
-          @click="router.push('/moji-zadaci')"
-          class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow"
-        >
+        <button @click="router.push('/moji-zadaci')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
           MOJI ZADACI
         </button>
-        <button 
-          @click="router.push('/recenzije')"
-          class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow"
-        >
+        <button @click="router.push('/recenzije')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
           RECENZIJE
         </button>
       </div>
@@ -48,28 +36,28 @@
 
     <!-- AI Content -->
     <div class="flex-grow flex items-center justify-center w-full">
-      <div
-        class="w-full max-w-2xl bg-white dark:bg-gray-800 text-black dark:text-white rounded-xl shadow-md p-6 space-y-4"
-      >
+      <div class="w-full max-w-2xl bg-white dark:bg-gray-800 text-black dark:text-white rounded-xl shadow-md p-6 space-y-4">
         <p class="text-base">
-          Dobrodošao/la! Ovdje ćeš uskoro moći postaviti pitanja i saznati koja volonterska pozicija najbolje odgovara tvojim vještinama, interesima i dostupnosti.
+          Dobrodošao/la! Unesi svoj interes ili vještinu i dobit ćeš preporuke volonterskih zadataka temeljene na prepoznavanju ključnih pojmova.
         </p>
 
-        <div
-          class="border border-gray-300 dark:border-gray-600 rounded-md h-64 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-700"
-        >
-          <p class="text-sm text-gray-500 dark:text-gray-400 italic">
-            ⌛ AI chat okvir – ovdje će se prikazivati odgovori i komunikacija s AI asistentom...
-          </p>
+        <div class="border border-gray-300 dark:border-gray-600 rounded-md h-64 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-700">
+          <ul class="list-disc list-inside text-sm text-gray-700 dark:text-gray-300 space-y-1">
+            <li v-for="(r, i) in preporuke" :key="i">{{ r }}</li>
+            <li v-if="preporuke.length === 0" class="italic text-gray-500 dark:text-gray-400">
+              ⌛ AI preporuke će se pojaviti ovdje...
+            </li>
+          </ul>
         </div>
 
         <div class="flex mt-4">
           <input
+            v-model="pitanje"
             type="text"
-            placeholder="Postavi pitanje..."
+            placeholder="Npr. 'tehnička podrška' ili 'fotografija'"
             class="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-l-md focus:outline-none dark:bg-gray-700 dark:text-white"
           />
-          <button class="bg-pink-600 hover:bg-blue-500 text-white font-semibold px-4 rounded-r-md">
+          <button @click="preporučiZadatke" class="bg-pink-600 hover:bg-blue-500 text-white font-semibold px-4 rounded-r-md">
             ➤
           </button>
         </div>
@@ -77,7 +65,6 @@
     </div>
 
     <!-- Logout -->
-     <br>
     <div class="mt-auto mb-6">
       <button
         class="text-sm font-medium hover:underline"
@@ -91,6 +78,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -99,16 +87,73 @@ defineProps({
   darkMode: Boolean,
   toggleDarkMode: Function
 })
-</script>
 
-<style scoped>
-.bg-dark {
-  background-color: #0d1321;
+// Proširena baza zadataka
+const zadaci = [
+  {
+    naziv: 'Registracija sudionika',
+    pojmovi: ['registracija', 'prijava', 'info', 'sudionik', 'gost', 'dolazak']
+  },
+  {
+    naziv: 'Tehnička podrška',
+    pojmovi: ['tehničar', 'tehnika', 'računalo', 'it', 'oprema', 'spajanje', 'kabel']
+  },
+  {
+    naziv: 'Fotografiranje događaja',
+    pojmovi: ['foto', 'kamera', 'slikanje', 'snimanje', 'fotograf']
+  },
+  {
+    naziv: 'Vođenje radionica',
+    pojmovi: ['radionica', 'mentorstvo', 'vođenje', 'prezentacija', 'objašnjavanje', 'edukacija']
+  },
+  {
+    naziv: 'Distribucija letaka',
+    pojmovi: ['letak', 'letci', 'promocija', 'dijeljenje', 'informiranje', 'obavještavanje']
+  }
+]
+
+const pitanje = ref('')
+const preporuke = ref([])
+
+// Napredniji stemmer
+function stem(word) {
+  return word
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // uklanja dijakritike
+    .replace(/(anje|enje|ivanje|iranje|acija|cija|ija|stvo|izam)$/, '')
+    .replace(/(ima|ama|om|em|u|a|e|i|o|u|u)$/g, '')
+    .replace(/[^a-zćčđšž]+/g, '')
 }
-.bg-light {
-  background-color: #f9fafb;
+
+// Glavna funkcija preporuke
+const preporučiZadatke = () => {
+  const unos = pitanje.value.trim().toLowerCase()
+  if (!unos) {
+    preporuke.value = ['⚠️ Unesi interes ili vještinu kako bismo mogli preporučiti zadatke.']
+    return
+  }
+
+  const riječiUnosa = unos.split(/\s+/).map(stem)
+
+  // Izračunaj broj poklapanja za svaki zadatak
+  const rezultati = zadaci
+    .map(zadatak => {
+      const brojPoklapanja = zadatak.pojmovi.reduce((zbroj, pojam) => {
+        const pojamStem = stem(pojam)
+        return riječiUnosa.some(r => pojamStem.includes(r) || r.includes(pojamStem)) ? zbroj + 1 : zbroj
+      }, 0)
+      return { naziv: zadatak.naziv, bodovi: brojPoklapanja }
+    })
+    .filter(z => z.bodovi > 0)
+    .sort((a, b) => b.bodovi - a.bodovi)
+
+  if (rezultati.length > 0) {
+    preporuke.value = rezultati.map(r => `✅ ${r.naziv} (${r.bodovi} povezane ključne riječi)`)
+  } else {
+    preporuke.value = [
+      '❌ Nema direktnih podudaranja za unesen pojam.',
+      '💡 Pokušaj s riječima poput: "računalo", "mentor", "kamera", "registracija"...'
+    ]
+  }
 }
-.text-dark {
-  color: #0d1321;
-}
-</style>
+</script>
