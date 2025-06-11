@@ -36,7 +36,6 @@ const firebaseConfig = {
   appId: "1:801638075484:web:8670a5ecbab44bb7096a99"
 }
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig)
 const auth = getAuth(app)
 const db = getFirestore(app)
@@ -51,13 +50,13 @@ const getUserRole = async (userId) => {
     const userDoc = await getDoc(doc(db, 'users', userId))
     if (userDoc.exists()) {
       const userData = userDoc.data()
-      // Provjeravamo da li korisnik ima role polje, ako ne - svi su volonteri po defaultu
+
       return userData.role || 'volonter'
     }
-    return 'volonter' // Default uloga
+    return 'volonter' 
   } catch (error) {
     console.error('Error getting user role:', error)
-    return 'volonter' // Default uloga u slučaju greške
+    return 'volonter'
   }
 }
 
@@ -71,7 +70,7 @@ const createUserDocument = async (userId, userData) => {
   try {
     await setDoc(doc(db, 'users', userId), {
       ...userData,
-      role: userData.role || 'volonter', // Default uloga volontjer
+      role: userData.role || 'volonter', 
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     })
@@ -82,7 +81,7 @@ const createUserDocument = async (userId, userData) => {
 }
 
 /**
- * Provjerava je li email verifikiran
+ * Provjerava je li email verificiran
  * @param {Object} user - Firebase korisnički objekt
  * @returns {Promise<boolean>}
  */
@@ -129,7 +128,7 @@ export {
   auth,
   db,
   
-  // Auth funkcije
+
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
@@ -139,7 +138,6 @@ export {
   applyActionCode,
   reload,
   
-  // Firestore funkcije
   doc,
   getDoc,
   setDoc,
@@ -154,7 +152,6 @@ export {
   serverTimestamp,
   writeBatch,
   
-  // Pomoćne funkcije
   getUserRole,
   createUserDocument,
   checkEmailVerified,

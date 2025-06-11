@@ -1,13 +1,11 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { inject } from 'vue'
 
 const router = useRouter()
-
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
+const { darkMode, toggleDarkMode } = inject('darkMode')
 </script>
+
 
 <template>
   <div
@@ -24,17 +22,14 @@ defineProps({
     </div>
 
     <div class="w-full max-w-md space-y-8 text-center">
-      <!-- Naslov -->
       <h1 class="text-5xl font-bold text-pink-500">
         Volont<span class="italic">IT</span>
       </h1>
-      
-      <!-- Tekstualna poruka -->
+
       <p class="text-lg mb-8" :class="darkMode ? 'text-white' : 'text-gray-800'">
         Uspješno ste stvorili svoj račun. Uskoro će Vam stići email potvrda. Hvala!
       </p>
 
-      <!-- Gumbi -->
       <div class="flex flex-col space-y-4">
         <button
           @click="router.push('/prijava')"

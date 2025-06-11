@@ -1,3 +1,27 @@
+<script setup>
+import { onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { auth, applyActionCode } from '@/firebase'
+
+const route = useRoute()
+const router = useRouter()
+const verifikacijaUspjesna = ref(false)
+const errorMessage = ref('')
+
+onMounted(async () => {
+  try {
+    const { oobCode } = route.query
+    if (!oobCode) throw new Error('Nedostaje verifikacijski kod')
+    
+    await applyActionCode(auth, oobCode)
+    verifikacijaUspjesna.value = true
+  } catch (error) {
+    console.error('Verifikacija error:', error)
+    errorMessage.value = 'Link za verifikaciju je nevažeći ili je istekao. Molimo zatražite novi verifikacijski email.'
+  }
+})
+</script>
+
 <template>
   <div class="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50 dark:bg-gray-900">
     <div class="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg text-center">
@@ -35,27 +59,3 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { onMounted, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { auth, applyActionCode } from '@/firebase'
-
-const route = useRoute()
-const router = useRouter()
-const verifikacijaUspjesna = ref(false)
-const errorMessage = ref('')
-
-onMounted(async () => {
-  try {
-    const { oobCode } = route.query
-    if (!oobCode) throw new Error('Nedostaje verifikacijski kod')
-    
-    await applyActionCode(auth, oobCode)
-    verifikacijaUspjesna.value = true
-  } catch (error) {
-    console.error('Verifikacija error:', error)
-    errorMessage.value = 'Link za verifikaciju je nevažeći ili je istekao. Molimo zatražite novi verifikacijski email.'
-  }
-})
-</script>

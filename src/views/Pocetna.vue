@@ -1,23 +1,21 @@
 <script setup>
 import { useRouter } from 'vue-router'
-import TamniNacin from '@/components/TamniNacin.vue'
+import { inject } from 'vue'
 import PocetnaLogo from '@/components/PocetnaLogo.vue'
 
+const { darkMode, toggleDarkMode } = inject('darkMode')
 const router = useRouter()
-const props = defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
 </script>
+
 
 <template>
   <div
-    :class="{'bg-dark text-white': props.darkMode, 'bg-light text-dark': !props.darkMode}"
-    class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans font-semibold"
+    :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
+    class="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans font-semibold transition-colors duration-500"
   >
     <div class="absolute inset-0 z-0">
       <div
-        :class="props.darkMode
+        :class="darkMode
           ? 'bg-gradient-to-br from-[#0d1321] to-[#1a2238]'
           : 'bg-gradient-to-br from-[#f9fafb] to-[#e3e9f0]'"
         class="w-full h-full"
@@ -25,14 +23,16 @@ const props = defineProps({
     </div>
 
     <div class="absolute top-4 right-4 z-10">
-      <TamniNacin
-        :darkMode="props.darkMode"
-        @toggle="props.toggleDarkMode"
-      />
+      <button
+        @click="toggleDarkMode"
+        class="bg-pink-600 hover:bg-pink-700 text-white text-xs font-bold py-2 px-4 rounded-full shadow"
+      >
+        {{ darkMode ? 'SVIJETLI NAČIN' : 'TAMNI NAČIN' }}
+      </button>
     </div>
 
     <div class="z-10">
-      <PocetnaLogo :darkMode="props.darkMode" />
+      <PocetnaLogo :darkMode="darkMode" />
     </div>
 
     <p class="z-10 mt-6 text-lg text-center">
@@ -73,3 +73,15 @@ const props = defineProps({
     </p>
   </div>
 </template>
+
+<style scoped>
+.bg-dark {
+  background-color: #0d1321;
+}
+.bg-light {
+  background-color: #f9fafb;
+}
+.text-dark {
+  color: #0d1321;
+}
+</style>

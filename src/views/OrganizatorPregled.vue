@@ -1,3 +1,81 @@
+<script setup>
+import { ref, onMounted, inject } from 'vue'
+import { useRouter } from 'vue-router'
+import { auth, db } from '@/firebase'
+import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore'
+import { signOut } from 'firebase/auth'
+
+const router = useRouter()
+const dogadaji = ref([])
+const loading = ref(true)
+
+const { darkMode, toggleDarkMode } = inject('darkMode')
+
+async function ucitajDogadaje() {
+  try {
+    loading.value = true
+    const user = auth.currentUser
+    if (!user) {
+      router.push('/organizator/prijava')
+      return
+    }
+
+    const q = query(
+      collection(db, 'dogadaji'), 
+      where('organizatorId', '==', user.uid)
+    )
+    const querySnapshot = await getDocs(q)
+    
+    dogadaji.value = []
+    querySnapshot.forEach((doc) => {
+      dogadaji.value.push({
+        id: doc.id,
+        ...doc.data()
+      })
+    })
+  } catch (error) {
+    console.error('Greška pri učitavanju događaja:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  ucitajDogadaje()
+})
+
+function formatDatum(datumString) {
+  if (!datumString) return ''
+  const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
+  return new Date(datumString).toLocaleDateString('hr-HR', options)
+}
+
+function urediZadatke(dogadajId) {
+  router.push(`/organizator/unos-zadatka/${dogadajId}`)
+}
+
+async function obrisiDogadaj(dogadajId) {
+  if (confirm('Jeste li sigurni da želite obrisati ovaj događaj i sve njegove zadatke?')) {
+    try {
+      await deleteDoc(doc(db, 'dogadaji', dogadajId))
+      await ucitajDogadaje()
+    } catch (error) {
+      console.error('Greška pri brisanju događaja:', error)
+      alert('Došlo je do greške pri brisanju događaja')
+    }
+  }
+}
+
+async function odjava() {
+  try {
+    await signOut(auth)
+    router.push('/')
+  } catch (error) {
+    console.error('Greška pri odjavi:', error)
+  }
+}
+</script>
+
 <template>
   <div
     :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
@@ -98,87 +176,6 @@
     </div>
   </div>
 </template>
-
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { auth, db } from '@/firebase'
-import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore'
-import { signOut } from 'firebase/auth'
-
-const router = useRouter()
-const dogadaji = ref([])
-const loading = ref(true)
-
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
-
-async function ucitajDogadaje() {
-  try {
-    loading.value = true
-    const user = auth.currentUser
-    if (!user) {
-      router.push('/organizator/prijava')
-      return
-    }
-
-    const q = query(
-      collection(db, 'dogadaji'), 
-      where('organizatorId', '==', user.uid)
-    )
-    const querySnapshot = await getDocs(q)
-    
-    dogadaji.value = []
-    querySnapshot.forEach((doc) => {
-      dogadaji.value.push({
-        id: doc.id,
-        ...doc.data()
-      })
-    })
-  } catch (error) {
-    console.error('Greška pri učitavanju događaja:', error)
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(() => {
-  ucitajDogadaje()
-})
-
-function formatDatum(datumString) {
-  if (!datumString) return ''
-  const options = { year: 'numeric', month: '2-digit', day: '2-digit' }
-  return new Date(datumString).toLocaleDateString('hr-HR', options)
-}
-
-function urediZadatke(dogadajId) {
-  router.push(`/organizator/unos-zadatka/${dogadajId}`)
-}
-
-async function obrisiDogadaj(dogadajId) {
-  if (confirm('Jeste li sigurni da želite obrisati ovaj događaj i sve njegove zadatke?')) {
-    try {
-      await deleteDoc(doc(db, 'dogadaji', dogadajId))
-      await ucitajDogadaje()
-    } catch (error) {
-      console.error('Greška pri brisanju događaja:', error)
-      alert('Došlo je do greške pri brisanju događaja')
-    }
-  }
-}
-
-async function odjava() {
-  try {
-    await signOut(auth)
-    router.push('/')
-  } catch (error) {
-    console.error('Greška pri odjavi:', error)
-  }
-}
-</script>
 
 <style scoped>
 .bg-dark {

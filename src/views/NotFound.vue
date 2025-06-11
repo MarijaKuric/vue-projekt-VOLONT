@@ -1,3 +1,6 @@
+<script setup>
+</script>
+
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center text-center px-4">
     <h1 class="text-5xl font-bold text-red-600 mb-4">404</h1>
@@ -15,10 +18,6 @@
     </router-link>
   </div>
 </template>
-
-<script setup>
-// Nema potrebe za dodatnim JS kodom
-</script>
 
 <style scoped>
 </style>

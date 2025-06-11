@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { auth, db, doc, getDoc } from '../firebase'
 
-// Statičke komponente
 import Pocetna from '@/views/Pocetna.vue'
 import Gost from '@/views/Gost.vue'
 import Registracija from '@/views/Registracija.vue'
@@ -70,7 +69,7 @@ const routes = [
   {
     path: '/:catchAll(.*)',
     name: 'NotFound',
-    component: () => import('@/views/NotFound.vue')  // Dodaj ovu komponentu
+    component: () => import('@/views/NotFound.vue')
   },
   {
   path: '/verifikacija-emaila',

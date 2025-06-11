@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { auth, signOut, onAuthStateChanged } from '@/firebase'
 
@@ -7,19 +7,18 @@ const router = useRouter()
 const isLoading = ref(true)
 const currentUser = ref(null)
 
+const { darkMode, toggleDarkMode } = inject('darkMode')
+
 onMounted(() => {
-  // Slušaj promjene stanja autentifikacije
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     if (user && user.emailVerified) {
       currentUser.value = user
       isLoading.value = false
     } else {
-      // Ako nema korisnika ili email nije verificiran, preusmjeri na prijavu
       router.replace('/prijava')
     }
   })
 
-  // Cleanup listener when component is unmounted
   return () => unsubscribe()
 })
 
@@ -31,24 +30,18 @@ const handleSignOut = async () => {
     console.error('Greška pri odjavi:', error)
   }
 }
-
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
 </script>
+
 
 <template>
   <div
     :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
     class="min-h-screen flex flex-col items-center justify-start py-6 px-6 transition-colors duration-500"
   >
-    <!-- Loading spinner -->
     <div v-if="isLoading" class="flex items-center justify-center min-h-screen">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500"></div>
     </div>
 
-    <!-- Main content -->
     <div v-else class="w-full">
       <div class="w-full flex justify-between items-center mb-4">
         <div>
@@ -99,6 +92,23 @@ defineProps({
       </div>
 
       <div class="mt-auto mb-6 text-center">
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
         <button
           @click="handleSignOut"
           class="text-sm font-medium hover:underline transition"

@@ -1,3 +1,76 @@
+<script setup>
+import { ref, computed, inject } from 'vue'
+import { useRouter } from 'vue-router'
+import { auth, db } from '@/firebase'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+
+const { darkMode, toggleDarkMode } = inject('darkMode')
+
+const router = useRouter()
+const noviDogadaj = ref({
+  naziv: '',
+  lokacija: '',
+  datum: '',
+  organizatorId: '',
+  zadaci: []
+})
+
+const isFormValid = computed(() => {
+  return noviDogadaj.value.naziv.trim() !== '' &&
+         noviDogadaj.value.lokacija.trim() !== '' &&
+         noviDogadaj.value.datum !== ''
+})
+
+const isLoading = ref(false)
+const error = ref('')
+
+async function kreirajDogadaj() {
+  if (!isFormValid.value || isLoading.value) return
+  
+  isLoading.value = true
+  error.value = ''
+  
+  try {
+    const user = auth.currentUser
+    if (!user) throw new Error('Niste prijavljeni')
+
+    const datumISO = new Date(noviDogadaj.value.datum).toISOString()
+    
+    const dogadajData = {
+      naziv: noviDogadaj.value.naziv.trim(),
+      lokacija: noviDogadaj.value.lokacija.trim(),
+      datum: datumISO,
+      organizatorId: user.uid,
+      zadaci: [],
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }
+    
+    const docRef = await addDoc(collection(db, 'dogadaji'), dogadajData)
+
+    noviDogadaj.value = {
+      naziv: '',
+      lokacija: '',
+      datum: '',
+      organizatorId: '',
+      zadaci: []
+    }
+
+    await router.push(`/organizator/unos-zadatka/${docRef.id}`)
+  } catch (err) {
+    console.error('Greška pri kreiranju događaja:', err)
+    error.value = err.message || 'Došlo je do greške pri kreiranju događaja'
+  } finally {
+    isLoading.value = false
+  }
+}
+
+defineProps({
+  darkMode: Boolean,
+  toggleDarkMode: Function
+})
+</script>
+
 <template>
   <div
     :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
@@ -92,80 +165,6 @@
     </p>
   </div>
 </template>
-
-<script setup>
-import { ref, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { auth, db } from '@/firebase'
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
-
-const router = useRouter()
-const noviDogadaj = ref({
-  naziv: '',
-  lokacija: '',
-  datum: '',
-  organizatorId: '',
-  zadaci: []
-})
-
-const isFormValid = computed(() => {
-  return noviDogadaj.value.naziv.trim() !== '' &&
-         noviDogadaj.value.lokacija.trim() !== '' &&
-         noviDogadaj.value.datum !== ''
-})
-
-const isLoading = ref(false)
-const error = ref('')
-
-async function kreirajDogadaj() {
-  if (!isFormValid.value || isLoading.value) return
-  
-  isLoading.value = true
-  error.value = ''
-  
-  try {
-    const user = auth.currentUser
-    if (!user) throw new Error('Niste prijavljeni')
-    
-    // Convert date to ISO string for consistent storage
-    const datumISO = new Date(noviDogadaj.value.datum).toISOString()
-    
-    const dogadajData = {
-      naziv: noviDogadaj.value.naziv.trim(),
-      lokacija: noviDogadaj.value.lokacija.trim(),
-      datum: datumISO,
-      organizatorId: user.uid,
-      zadaci: [],
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    }
-    
-    const docRef = await addDoc(collection(db, 'dogadaji'), dogadajData)
-    
-    // Reset form
-    noviDogadaj.value = {
-      naziv: '',
-      lokacija: '',
-      datum: '',
-      organizatorId: '',
-      zadaci: []
-    }
-    
-    // Navigate to task creation
-    await router.push(`/organizator/unos-zadatka/${docRef.id}`)
-  } catch (err) {
-    console.error('Greška pri kreiranju događaja:', err)
-    error.value = err.message || 'Došlo je do greške pri kreiranju događaja'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
-</script>
 
 <style>
 .bg-dark {

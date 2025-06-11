@@ -1,15 +1,12 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
-import { db, collection, onSnapshot } from '@/firebase' // import Firebase funkcija
+import { db, collection, onSnapshot } from '@/firebase'
 import TamniNacin from '@/components/TamniNacin.vue'
 
 const router = useRouter()
 
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
+const { darkMode, toggleDarkMode } = inject('darkMode')
 
 const dogadaji = ref([])
 let unsubscribe = null
@@ -33,9 +30,10 @@ onUnmounted(() => {
 })
 
 function prijaviSeGost() {
-  router.push('/prijava')  // Gosta vodi na login stranicu
+  router.push('/prijava')
 }
 </script>
+
 
 <template>
   <div
@@ -53,7 +51,6 @@ function prijaviSeGost() {
       VolontIT (Gost)
     </h1>
 
-    <!-- Događaji i zadaci -->
 <div class="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
   <div
     v-for="(dogadaj, index) in dogadaji"

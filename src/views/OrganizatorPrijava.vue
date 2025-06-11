@@ -1,11 +1,12 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '@/firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 const router = useRouter()
+const { darkMode, toggleDarkMode } = inject('darkMode')
 
 const nazivOrganizacije = ref('')
 const email = ref('')
@@ -27,28 +28,24 @@ const handleLogin = async () => {
   }
 
   try {
-    // Prvo pokušaj autentifikaciju
     const userCredential = await signInWithEmailAndPassword(auth, email.value, lozinka.value)
     const user = userCredential.user
-    
-    // Proveri da li je email organizatora
-    if (email.value !== 'marijaa.kuric@gmail.com') {
-      prijavaError.value = 'Samo ovlašteni organizator može pristupiti ovom dijelu.'
-      return
-    }
 
-    // Proverava da li je naziv organizacije tačan
+if (email.value !== 'organizatororganizator4@gmail.com') {
+  prijavaError.value = 'Samo ovlašteni organizator može pristupiti ovom dijelu.'
+  return
+}
+
+
     if (nazivOrganizacije.value.trim() !== 'Organizacijska udruga') {
       prijavaError.value = 'Neispravan naziv organizacije.'
       return
     }
-    
-    // Check if user document exists in Firestore
+
     const userDocRef = doc(db, 'users', user.uid)
     const userDoc = await getDoc(userDocRef)
     
     if (!userDoc.exists()) {
-      // Ako dokument ne postoji, kreiraj ga sa ulogom organizatora
       await setDoc(userDocRef, {
         email: user.email,
         role: 'organizator',
@@ -57,10 +54,8 @@ const handleLogin = async () => {
       })
       console.log('Kreiran novi dokument za organizatora')
     } else {
-      // Ako dokument postoji, proveri ulogu
       const userData = userDoc.data()
       if (userData.role !== 'organizator') {
-        // Ažuriraj ulogu na organizator
         await setDoc(userDocRef, {
           ...userData,
           role: 'organizator',
@@ -70,8 +65,7 @@ const handleLogin = async () => {
         console.log('Ažurirana uloga korisnika na organizator')
       }
     }
-    
-    // Successful login, redirect to organizer dashboard
+
     router.push('/organizator/pregled')
     
   } catch (error) {
@@ -144,7 +138,7 @@ defineProps({
           v-model="email"
           id="email"
           type="email"
-          placeholder="marijaa.kuric@gmail.com"
+          placeholder="organizator@gmail.com"
           :class="['w-full p-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-black placeholder-gray-500']"
         />
       </div>
@@ -193,16 +187,15 @@ defineProps({
 
 <style>
 .bg-dark {
-  background-color: #0d1321; /* Tamna pozadina */
+  background-color: #0d1321;
 }
 .bg-light {
-  background-color: #f9fafb; /* Svijetla pozadina */
+  background-color: #f9fafb;
 }
 .text-dark {
-  color: #0d1321; /* Tamni tekst za svijetlu pozadinu */
+  color: #0d1321; 
 }
-/* Stil za placeholder tekst u input poljima */
 input.text-black::placeholder {
-  color: #6b7280; /* Gray-500 */
+  color: #6b7280;
 }
 </style>

@@ -1,9 +1,11 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth, db } from '@/firebase'
 import { doc, getDoc } from 'firebase/firestore'
+
+const { darkMode, toggleDarkMode } = inject('darkMode')
 
 const router = useRouter()
 const email = ref('')
@@ -62,13 +64,7 @@ async function prijaviSe() {
     isLoading.value = false
   }
 }
-
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
 </script>
-
 
 <template>
   <div
@@ -97,7 +93,7 @@ defineProps({
 
     <div class="w-full max-w-md space-y-5 bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg">
       <div>
-        <label for="email" class="block mb-1 text-sm font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+        <label for="email" class="block mb-1 text-sm font-medium" :class="darkMode ? 'text-gray-700' : 'text-gray-700'">
           Email<span class="text-pink-500">*</span>
         </label>
         <input
@@ -108,7 +104,7 @@ defineProps({
           :class="[
             'w-full p-3 rounded-lg border focus:outline-none focus:ring-2',
             darkMode
-              ? 'bg-gray-700 border-gray-600 text-white focus:ring-pink-500 placeholder-gray-400'
+              ? 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-400'
               : 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
           ]"
           :disabled="isLoading"
@@ -116,7 +112,7 @@ defineProps({
       </div>
 
       <div>
-        <label for="lozinka" class="block mb-1 text-sm font-medium" :class="darkMode ? 'text-gray-300' : 'text-gray-700'">
+        <label for="lozinka" class="block mb-1 text-sm font-medium" :class="darkMode ? 'text-gray-700' : 'text-gray-700'">
           Lozinka<span class="text-pink-500">*</span>
         </label>
         <input
@@ -127,7 +123,7 @@ defineProps({
           :class="[
             'w-full p-3 rounded-lg border focus:outline-none focus:ring-2',
             darkMode
-              ? 'bg-gray-700 border-gray-600 text-white focus:ring-pink-500 placeholder-gray-400'
+              ? 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-400'
               : 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
           ]"
           :disabled="isLoading"

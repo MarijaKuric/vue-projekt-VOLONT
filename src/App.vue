@@ -12,7 +12,6 @@ const toggleDarkMode = () => {
   localStorage.setItem('darkMode', darkMode.value)
 }
 
-// Pratimo auth stanje
 onMounted(() => {
   const savedMode = localStorage.getItem('darkMode')
   if (savedMode) darkMode.value = savedMode === 'true'
@@ -23,7 +22,6 @@ onMounted(() => {
   })
 })
 
-// Provide global state
 provide('darkMode', { darkMode, toggleDarkMode })
 provide('auth', { currentUser, isLoading })
 </script>
@@ -38,5 +36,4 @@ provide('auth', { currentUser, isLoading })
 </template>
 
 <style>
-/* Postojeći stilovi */
 </style>

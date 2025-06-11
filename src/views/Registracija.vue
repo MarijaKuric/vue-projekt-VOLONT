@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   createUserWithEmailAndPassword, 
@@ -7,7 +7,9 @@ import {
   updateProfile
 } from 'firebase/auth'
 import { auth, db } from '@/firebase'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'  // dodano
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+
+const { darkMode, toggleDarkMode } = inject('darkMode')
 
 const router = useRouter()
 const ime = ref('')
@@ -35,7 +37,6 @@ const handleSubmit = async () => {
   successMessage.value = ''
 
   try {
-    // Kreiraj korisnika
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email.value,
@@ -43,26 +44,22 @@ const handleSubmit = async () => {
     )
     const user = userCredential.user
 
-    // Pošalji email za verifikaciju
     await sendEmailVerification(user)
-    
-    // Ažuriraj profil s imenom
+
     await updateProfile(user, {
       displayName: ime.value
     })
 
-    // Spremi dodatne podatke u Firestore
     await setDoc(doc(db, 'users', user.uid), {
       name: ime.value,
       email: email.value,
       role: 'volonter',
-      emailVerified: user.emailVerified,  // ovdje koristimo stvarnu vrijednost
+      emailVerified: user.emailVerified,
       createdAt: serverTimestamp()
     })
 
     successMessage.value = `Poslali smo vam email za verifikaciju na ${email.value}. Molimo potvrdite svoj email prije prijave.`
-    
-    // Reset forme
+
     ime.value = ''
     email.value = ''
     lozinka.value = ''
@@ -109,7 +106,6 @@ function getErrorMessage(code) {
     <h1 class="text-5xl font-extrabold text-pink-500 mb-2 tracking-wide italic">VolontIT</h1>
     <p class="mb-8 text-center text-lg" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Registrirajte se</p>
 
-    <!-- Success message -->
     <div 
       v-if="successMessage" 
       class="w-full max-w-md mb-6 p-4 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-lg text-center"
@@ -117,7 +113,6 @@ function getErrorMessage(code) {
       {{ successMessage }}
     </div>
 
-    <!-- Error message -->
     <div 
       v-if="errorMessage" 
       class="w-full max-w-md mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg text-center"
@@ -130,7 +125,7 @@ function getErrorMessage(code) {
         <label
           for="ime"
           class="block mb-1 text-sm font-medium"
-          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+          :class="darkMode ? 'text-gray-700' : 'text-gray-700'"
         >
           Ime i prezime<span class="text-pink-500">*</span>
         </label>
@@ -142,7 +137,7 @@ function getErrorMessage(code) {
           :class="[
             'w-full p-3 rounded-lg border focus:outline-none focus:ring-2',
             darkMode 
-              ? 'bg-gray-700 border-gray-600 text-white focus:ring-pink-500 placeholder-gray-400'
+              ? 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
               : 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
           ]"
           :disabled="isLoading"
@@ -153,7 +148,7 @@ function getErrorMessage(code) {
         <label
           for="email"
           class="block mb-1 text-sm font-medium"
-          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+          :class="darkMode ? 'text-gray-700' : 'text-gray-700'"
         >
           Email<span class="text-pink-500">*</span>
         </label>
@@ -165,7 +160,7 @@ function getErrorMessage(code) {
           :class="[
             'w-full p-3 rounded-lg border focus:outline-none focus:ring-2',
             darkMode 
-              ? 'bg-gray-700 border-gray-600 text-white focus:ring-pink-500 placeholder-gray-400'
+              ? 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
               : 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
           ]"
           :disabled="isLoading"
@@ -176,7 +171,7 @@ function getErrorMessage(code) {
         <label
           for="lozinka"
           class="block mb-1 text-sm font-medium"
-          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+          :class="darkMode ? 'text-gray-700' : 'text-gray-700'"
         >
           Lozinka<span class="text-pink-500">*</span>
         </label>
@@ -188,7 +183,7 @@ function getErrorMessage(code) {
           :class="[
             'w-full p-3 rounded-lg border focus:outline-none focus:ring-2',
             darkMode 
-              ? 'bg-gray-700 border-gray-600 text-white focus:ring-pink-500 placeholder-gray-400'
+              ? 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
               : 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
           ]"
           :disabled="isLoading"
@@ -199,7 +194,7 @@ function getErrorMessage(code) {
         <label
           for="potvrda"
           class="block mb-1 text-sm font-medium"
-          :class="darkMode ? 'text-gray-300' : 'text-gray-700'"
+          :class="darkMode ? 'text-gray-700' : 'text-gray-700'"
         >
           Potvrda lozinke<span class="text-pink-500">*</span>
         </label>
@@ -211,7 +206,7 @@ function getErrorMessage(code) {
           :class="[
             'w-full p-3 rounded-lg border focus:outline-none focus:ring-2',
             darkMode 
-              ? 'bg-gray-700 border-gray-600 text-white focus:ring-pink-500 placeholder-gray-400'
+              ? 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
               : 'bg-white border-gray-300 text-gray-900 focus:ring-pink-500 placeholder-gray-500'
           ]"
           :disabled="isLoading"
