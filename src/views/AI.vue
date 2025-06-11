@@ -135,6 +135,8 @@ const preporučiZadatke = () => {
       </div>
     </div>
 
+    <!-- Logout -->
+     <br>
     <div class="mt-auto mb-6">
       <br>
       <button
@@ -148,3 +150,25 @@ const preporučiZadatke = () => {
   </div>
 </template>
 
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+defineProps({
+  darkMode: Boolean,
+  toggleDarkMode: Function
+})
+</script>
+
+<style scoped>
+.bg-dark {
+  background-color: #0d1321;
+}
+.bg-light {
+  background-color: #f9fafb;
+}
+.text-dark {
+  color: #0d1321;
+}
+</style>
