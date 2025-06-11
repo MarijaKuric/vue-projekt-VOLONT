@@ -1,6 +1,4 @@
 import { zadaci } from '../data/zadaci'
-
-// Primi unos korisnika i vrati preporučene zadatke
 export function preporuciZadatke(unos) {
   const kljucneRijeci = unos.toLowerCase().split(' ')
   
