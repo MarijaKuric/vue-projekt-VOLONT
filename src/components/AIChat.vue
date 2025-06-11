@@ -1,3 +1,16 @@
+
+<script setup>
+import { ref } from 'vue'
+import { preporuciZadatke } from '../utils/preporuke'
+
+const pitanje = ref('')
+const preporuke = ref([])
+
+function dajPreporuke() {
+  preporuke.value = preporuciZadatke(pitanje.value)
+}
+</script>
+
 <template>
   <div>
     <input
@@ -26,14 +39,3 @@
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { preporuciZadatke } from '../utils/preporuke'
-
-const pitanje = ref('')
-const preporuke = ref([])
-
-function dajPreporuke() {
-  preporuke.value = preporuciZadatke(pitanje.value)
-}
-</script>
