@@ -2,10 +2,13 @@
 import { ref, inject } from 'vue'
 import { useRouter } from 'vue-router'
 
+// Router
 const router = useRouter()
 
+// Dark mode iz provide
 const { darkMode, toggleDarkMode } = inject('darkMode')
 
+// Zadatci s ključnim pojmovima
 const zadaci = [
   {
     naziv: 'Registracija sudionika',
@@ -29,19 +32,23 @@ const zadaci = [
   }
 ]
 
+// Korisnički unos i preporuke
 const pitanje = ref('')
 const preporuke = ref([])
 
+// Funkcija za stemmanje pojmova
 function stem(word) {
   return word
     .toLowerCase()
-    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
     .replace(/(anje|enje|ivanje|iranje|acija|cija|ija|stvo|izam)$/, '')
-    .replace(/(ima|ama|om|em|u|a|e|i|o|u|u)$/g, '')
+    .replace(/(ima|ama|om|em|u|a|e|i|o|u|u)$/, '')
     .replace(/[^a-zćčđšž]+/g, '')
 }
 
-const preporučiZadatke = () => {
+// AI preporuka zadataka na temelju korisničkog unosa
+function preporučiZadatke() {
   const unos = pitanje.value.trim().toLowerCase()
   if (!unos) {
     preporuke.value = ['⚠️ Unesi interes ili vještinu kako bismo mogli preporučiti zadatke.']
@@ -61,23 +68,21 @@ const preporučiZadatke = () => {
     .filter(z => z.bodovi > 0)
     .sort((a, b) => b.bodovi - a.bodovi)
 
-  if (rezultati.length > 0) {
-    preporuke.value = rezultati.map(r => `✅ ${r.naziv} (${r.bodovi} povezane ključne riječi)`)
-  } else {
-    preporuke.value = [
-      '❌ Nema direktnih podudaranja za unesen pojam.',
-      '💡 Pokušaj s riječima poput: "računalo", "mentor", "kamera", "registracija"...'
-    ]
-  }
+  preporuke.value = rezultati.length > 0
+    ? rezultati.map(r => `✅ ${r.naziv} (${r.bodovi} povezane ključne riječi)`)
+    : [
+        '❌ Nema direktnih podudaranja za unesen pojam.',
+        '💡 Pokušaj s riječima poput: "računalo", "mentor", "kamera", "registracija"...'
+      ]
 }
 </script>
-
 
 <template>
   <div
     :class="darkMode ? 'bg-dark text-white' : 'bg-light text-dark'"
     class="min-h-screen flex flex-col items-center justify-start py-6 px-6 transition-colors duration-500"
   >
+    <!-- Dark mode toggle -->
     <div class="w-full flex justify-end mb-4">
       <button
         @click="toggleDarkMode"
@@ -87,25 +92,18 @@ const preporučiZadatke = () => {
       </button>
     </div>
 
+    <!-- Naslov i navigacija -->
     <div class="text-center">
       <h1 class="text-pink-500 text-5xl font-bold italic mb-8">VolontIT</h1>
-
       <div class="flex flex-wrap gap-4 justify-center mb-8">
-        <button @click="router.push('/ai')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
-          AI ALAT
-        </button>
-        <button @click="router.push('/volonter-dogadaji')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
-          DOGAĐAJI
-        </button>
-        <button @click="router.push('/moji-zadaci')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
-          MOJI ZADACI
-        </button>
-        <button @click="router.push('/recenzije')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">
-          RECENZIJE
-        </button>
+        <button @click="router.push('/ai')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">AI ALAT</button>
+        <button @click="router.push('/volonter-dogadaji')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">DOGAĐAJI</button>
+        <button @click="router.push('/moji-zadaci')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">MOJI ZADACI</button>
+        <button @click="router.push('/recenzije')" class="bg-pink-500 hover:bg-pink-700 text-white text-sm font-semibold py-3 px-6 rounded-full shadow">RECENZIJE</button>
       </div>
     </div>
 
+    <!-- AI preporuke -->
     <div class="flex-grow flex items-center justify-center w-full">
       <div class="w-full max-w-2xl bg-white dark:bg-gray-800 text-black dark:text-white rounded-xl shadow-md p-6 space-y-4">
         <p class="text-base">
@@ -135,10 +133,8 @@ const preporučiZadatke = () => {
       </div>
     </div>
 
-    <!-- Logout -->
-     <br>
+    <!-- Odjava -->
     <div class="mt-auto mb-6">
-      <br>
       <button
         class="text-sm font-medium hover:underline"
         @click="router.push('/')"
@@ -149,17 +145,6 @@ const preporučiZadatke = () => {
     </div>
   </div>
 </template>
-
-<script setup>
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
-
-defineProps({
-  darkMode: Boolean,
-  toggleDarkMode: Function
-})
-</script>
 
 <style scoped>
 .bg-dark {
